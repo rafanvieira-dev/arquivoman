@@ -7,7 +7,6 @@
 </head>
 <body>
 
-    <!-- TELA INICIAL -->
     <div id="startScreen" class="screen">
         <h1>🗂️ ArquivoMan</h1>
         <p>O arquivista precisa organizar tudo antes que os gaveteiros dominem o setor!</p>
@@ -17,7 +16,6 @@
         <ol id="rankingList"></ol>
     </div>
 
-    <!-- HUD -->
     <div id="gameUI" style="display:none;">
         <div id="hud">
             <span>Pontos: <span id="score">0</span></span>
@@ -26,7 +24,8 @@
             <span id="powerTimer"></span>
         </div>
 
-        <canvas id="gameCanvas" width="600" height="600"></canvas>
+        <!-- 28 colunas x 20px = 560 | 31 linhas x 20px = 620 -->
+        <canvas id="gameCanvas" width="560" height="620"></canvas>
 
         <div id="message"></div>
     </div>
@@ -34,4 +33,3 @@
     <script src="game.js"></script>
 </body>
 </html>
-
