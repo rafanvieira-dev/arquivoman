@@ -1,1 +1,37 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>ArquivoMan</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- TELA INICIAL -->
+    <div id="startScreen" class="screen">
+        <h1>🗂️ ArquivoMan</h1>
+        <p>O arquivista precisa organizar tudo antes que os gaveteiros dominem o setor!</p>
+        <button onclick="startGame()">▶ Jogar</button>
+
+        <h2>🏆 Ranking Local</h2>
+        <ol id="rankingList"></ol>
+    </div>
+
+    <!-- HUD -->
+    <div id="gameUI" style="display:none;">
+        <div id="hud">
+            <span>Pontos: <span id="score">0</span></span>
+            <span>Vidas: <span id="lives">3</span></span>
+            <span>Nível: <span id="level">1</span></span>
+            <span id="powerTimer"></span>
+        </div>
+
+        <canvas id="gameCanvas" width="600" height="600"></canvas>
+
+        <div id="message"></div>
+    </div>
+
+    <script src="game.js"></script>
+</body>
+</html>
 
