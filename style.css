@@ -1,155 +1,59 @@
-const canvas = document.getElementById("gameCanvas");
-const ctx = canvas.getContext("2d");
-
-// Configurações do Jogo
-const laneWidth = canvas.width / 3;
-let gameStarted = false;
-let score = 0;
-let lives = 3;
-let speed = 5;
-let frameCount = 0;
-
-let player = {
-    lane: 1, // Pista do meio (0, 1, 2)
-    y: 500,
-    width: 50,
-    height: 60,
-    targetX: laneWidth + (laneWidth/2) - 25
-};
-
-let obstacles = [];
-let items = [];
-let powerMode = false;
-let powerTimer = 0;
-
-function startGame() {
-    document.getElementById("startScreen").style.display = "none";
-    document.getElementById("gameUI").style.display = "block";
-    gameStarted = true;
-    gameLoop();
+body {
+    background-color: #0a0a12;
+    color: #00d4ff;
+    text-align: center;
+    font-family: 'Courier New', Courier, monospace;
+    margin: 0;
+    overflow: hidden;
 }
 
-// Controles
-document.addEventListener("keydown", e => {
-    if (!gameStarted) return;
-    if (e.key === "ArrowLeft" && player.lane > 0) player.lane--;
-    if (e.key === "ArrowRight" && player.lane < 2) player.lane++;
-});
-
-function spawnEntity() {
-    frameCount++;
-    // Spawn de Obstáculos (Gaveteiros) ou Itens (Arquivos)
-    if (frameCount % Math.max(20, 60 - Math.floor(score/100)) === 0) {
-        const lane = Math.floor(Math.random() * 3);
-        const type = Math.random();
-        
-        if (type > 0.3) {
-            obstacles.push({ x: lane * laneWidth + (laneWidth/2) - 20, y: -50, type: 'obs' });
-        } else {
-            items.push({ x: lane * laneWidth + (laneWidth/2) - 15, y: -50, type: type > 0.05 ? 'file' : 'power' });
-        }
-    }
+canvas {
+    background-color: #111;
+    border: 4px solid #333;
+    box-shadow: 0 0 20px rgba(0, 212, 255, 0.2);
+    image-rendering: pixelated;
+    display: block;
+    margin: 0 auto;
 }
 
-function update() {
-    // Suavizar movimento lateral
-    const targetX = player.lane * laneWidth + (laneWidth/2) - player.width/2;
-    player.targetX += (targetX - player.targetX) * 0.2;
-
-    // Aumentar velocidade gradualmente
-    speed = 5 + (score / 500);
-
-    // Mover obstáculos
-    obstacles.forEach((obs, index) => {
-        obs.y += speed;
-        // Colisão
-        if (obs.y + 40 > player.y && obs.y < player.y + player.height &&
-            obs.x + 40 > player.targetX && obs.x < player.targetX + player.width) {
-            if (!powerMode) {
-                lives--;
-                obstacles.splice(index, 1);
-                if (lives <= 0) {
-                    alert("Expediente Encerrado! Pontos: " + score);
-                    location.reload();
-                }
-            } else {
-                obstacles.splice(index, 1);
-                score += 50;
-            }
-        }
-        if (obs.y > canvas.height) obstacles.splice(index, 1);
-    });
-
-    // Mover itens
-    items.forEach((item, index) => {
-        item.y += speed;
-        if (item.y + 30 > player.y && item.y < player.y + player.height &&
-            item.x + 30 > player.targetX && item.x < player.targetX + player.width) {
-            if (item.type === 'file') score += 10;
-            else {
-                powerMode = true;
-                powerTimer = 300; // frames
-            }
-            items.splice(index, 1);
-        }
-        if (item.y > canvas.height) items.splice(index, 1);
-    });
-
-    if (powerMode) {
-        powerTimer--;
-        if (powerTimer <= 0) powerMode = false;
-    }
-
-    document.getElementById("score").innerText = Math.floor(score);
-    document.getElementById("lives").innerText = lives;
-    document.getElementById("powerTimer").innerText = powerMode ? "🔥 MODO FOCO!" : "";
+#hud {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 25px;
+    font-size: 22px;
+    font-weight: bold;
+    padding: 15px;
+    background: #1a1a2e;
+    border-bottom: 2px solid #00d4ff;
+    color: white;
 }
 
-function draw() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    // Desenhar Pistas (Perspectiva 32-bit)
-    ctx.strokeStyle = "#0f3460";
-    ctx.lineWidth = 2;
-    for (let i = 0; i <= 3; i++) {
-        ctx.beginPath();
-        ctx.moveTo(i * laneWidth, 0);
-        ctx.lineTo(i * laneWidth, canvas.height);
-        ctx.stroke();
-    }
-
-    // Desenhar Jogador (Arquivista)
-    ctx.fillStyle = powerMode ? "#00ff41" : "#e94560";
-    ctx.fillRect(player.targetX, player.y, player.width, player.height);
-    // Detalhe do boneco
-    ctx.fillStyle = "white";
-    ctx.fillRect(player.targetX + 10, player.y + 10, 10, 10);
-    ctx.fillRect(player.targetX + 30, player.y + 10, 10, 10);
-
-    // Desenhar Obstáculos (Gaveteiros)
-    ctx.fillStyle = "#533483";
-    obstacles.forEach(obs => {
-        ctx.fillRect(obs.x, obs.y, 40, 40);
-        ctx.strokeStyle = "white";
-        ctx.strokeRect(obs.x + 5, obs.y + 5, 30, 10); // Gaveta 1
-        ctx.strokeRect(obs.x + 5, obs.y + 20, 30, 10); // Gaveta 2
-    });
-
-    // Desenhar Itens (Papéis)
-    items.forEach(item => {
-        ctx.fillStyle = item.type === 'file' ? "white" : "yellow";
-        ctx.fillRect(item.x, item.y, 30, 30);
-        if(item.type === 'power') {
-            ctx.fillStyle = "black";
-            ctx.fillRect(item.x + 5, item.y + 5, 20, 5); // Estilo Disquete
-        }
-    });
+.screen {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: #16213e;
+    padding: 40px;
+    border: 3px solid #00d4ff;
+    border-radius: 8px;
+    z-index: 10;
 }
 
-function gameLoop() {
-    if (!gameStarted) return;
-    update();
-    draw();
-    spawnEntity();
-    requestAnimationFrame(gameLoop);
+button {
+    padding: 15px 35px;
+    font-size: 20px;
+    background: #00d4ff;
+    color: #111;
+    border: none;
+    cursor: pointer;
+    font-weight: bold;
+    text-transform: uppercase;
+    transition: 0.1s;
+}
+
+button:hover {
+    background: #ffffff;
+    transform: scale(1.05);
 }
