@@ -1,222 +1,161 @@
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 
-const tileSize = 20;
-
+// Configurações base
+const laneWidth = canvas.width / 3;
+let gameStarted = false;
 let score = 0;
 let lives = 3;
-let level = 1;
-let gameStarted = false;
+let speed = 5;
+let frameCount = 0;
 
+let player = {
+    lane: 1, // Começa na pista do meio
+    y: 500,
+    width: 44,
+    height: 54,
+    currentX: laneWidth + (laneWidth/2) - 22
+};
+
+let obstacles = [];
+let items = [];
 let powerMode = false;
 let powerTimer = 0;
-let totalFiles = 0;
 
-let enemyMoveDelay = 10;
-let enemyMoveCounter = 0;
-
-// =============================
-// MAPA CLÁSSICO PAC-MAN 28x31
-// =============================
-
-let originalMap = [
-
-[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-[1,3,2,2,2,2,2,2,2,2,2,2,2,1,1,2,2,2,2,2,2,2,2,2,2,2,3,1],
-[1,2,1,1,1,1,2,1,1,1,1,1,2,1,1,2,1,1,1,1,1,2,1,1,1,1,2,1],
-[1,2,1,1,1,1,2,1,1,1,1,1,2,1,1,2,1,1,1,1,1,2,1,1,1,1,2,1],
-[1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1],
-[1,2,1,1,1,1,2,1,1,2,1,1,1,1,1,1,2,1,1,2,1,1,1,1,1,1,2,1],
-[1,2,2,2,2,2,2,1,1,2,2,2,2,1,1,2,2,2,2,1,1,2,2,2,2,2,2,1],
-[1,1,1,1,1,1,2,1,1,1,1,1,0,0,0,0,1,1,1,1,1,2,1,1,1,1,1,1],
-[0,0,0,0,0,1,2,1,0,0,0,0,0,0,0,0,0,0,0,1,2,1,0,0,0,0,0,0],
-[1,1,1,1,1,1,2,1,0,1,1,0,1,1,1,1,0,1,1,0,2,1,1,1,1,1,1,1],
-[0,0,0,0,0,0,2,0,0,1,0,0,0,0,0,0,0,0,1,0,2,0,0,0,0,0,0,0],
-[1,1,1,1,1,1,2,1,0,1,1,1,1,0,0,1,1,1,1,0,2,1,1,1,1,1,1,1],
-[0,0,0,0,0,1,2,1,0,0,0,0,0,0,0,0,0,0,0,1,2,1,0,0,0,0,0,0],
-[1,1,1,1,1,1,2,1,1,1,1,1,0,0,0,0,1,1,1,1,2,1,1,1,1,1,1,1],
-[1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1],
-[1,2,1,1,1,1,2,1,1,1,1,1,2,1,1,2,1,1,1,1,1,2,1,1,1,1,2,1],
-[1,3,2,2,1,1,2,2,2,2,2,2,2,1,1,2,2,2,2,2,2,2,1,1,2,2,3,1],
-[1,1,1,2,1,1,2,1,1,2,1,1,1,1,1,1,2,1,1,2,1,1,2,1,1,1,1,1],
-[1,2,2,2,2,2,2,1,1,2,2,2,2,1,1,2,2,2,2,1,1,2,2,2,2,2,2,1],
-[1,2,1,1,1,1,1,1,1,1,1,1,2,1,1,2,1,1,1,1,1,1,1,1,1,1,2,1],
-[1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1],
-[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
-
-];
-
-let map = [];
-
-function resetMap(){
-  map = JSON.parse(JSON.stringify(originalMap));
-  countFiles();
+function startGame() {
+    document.getElementById("startScreen").style.display = "none";
+    document.getElementById("gameUI").style.display = "block";
+    gameStarted = true;
+    gameLoop();
 }
 
-function countFiles(){
-  totalFiles = 0;
-  for(let r=0;r<map.length;r++){
-    for(let c=0;c<map[r].length;c++){
-      if(map[r][c]===2) totalFiles++;
-    }
-  }
-}
+// Movimentação por pistas
+document.addEventListener("keydown", e => {
+    if (!gameStarted) return;
+    if (e.key === "ArrowLeft" && player.lane > 0) player.lane--;
+    if (e.key === "ArrowRight" && player.lane < 2) player.lane++;
+});
 
-let player = { x: 13, y: 17 };
+function update() {
+    // Suavizar o deslocamento lateral do jogador
+    const targetX = player.lane * laneWidth + (laneWidth/2) - player.width/2;
+    player.currentX += (targetX - player.currentX) * 0.25;
 
-let enemies = [
-  { x: 13, y: 11, color: "red" },
-  { x: 12, y: 11, color: "pink" },
-  { x: 14, y: 11, color: "cyan" },
-  { x: 13, y: 12, color: "orange" }
-];
+    // Aumento progressivo de dificuldade
+    speed = 5 + (score / 1000);
 
-function updateHUD(){
-  document.getElementById("score").innerText = score;
-  document.getElementById("lives").innerText = lives;
-  document.getElementById("level").innerText = level;
-  document.getElementById("powerTimer").innerText =
-    powerMode ? "Power: " + Math.ceil(powerTimer) : "";
-}
-
-function startGame(){
-  document.getElementById("startScreen").style.display="none";
-  document.getElementById("gameUI").style.display="block";
-  resetMap();
-  gameStarted=true;
-  updateHUD();
-  gameLoop();
-}
-
-document.addEventListener("keydown",e=>{
-  if(!gameStarted) return;
-
-  let newX=player.x;
-  let newY=player.y;
-
-  if(e.key==="ArrowUp") newY--;
-  if(e.key==="ArrowDown") newY++;
-  if(e.key==="ArrowLeft") newX--;
-  if(e.key==="ArrowRight") newX++;
-
-  if(newX<0) newX=map[0].length-1;
-  if(newX>=map[0].length) newX=0;
-
-  if(map[newY] && map[newY][newX]!==1){
-    player.x=newX;
-    player.y=newY;
-
-    if(map[newY][newX]===2){
-      map[newY][newX]=0;
-      score+=10;
-      totalFiles--;
+    // Gerar obstáculos e itens
+    frameCount++;
+    if (frameCount % Math.max(25, 50 - Math.floor(score/500)) === 0) {
+        const lane = Math.floor(Math.random() * 3);
+        const xPos = lane * laneWidth + (laneWidth/2) - 20;
+        
+        if (Math.random() > 0.3) {
+            obstacles.push({ x: xPos, y: -60, w: 40, h: 40 });
+        } else {
+            items.push({ x: xPos + 5, y: -60, w: 30, h: 30, type: Math.random() > 0.1 ? 'file' : 'disk' });
+        }
     }
 
-    if(map[newY][newX]===3){
-      map[newY][newX]=0;
-      powerMode=true;
-      powerTimer=15;
-    }
+    // Lógica dos Obstáculos (Gaveteiros)
+    obstacles.forEach((obs, i) => {
+        obs.y += speed;
+        // Colisão simples por caixa
+        if (obs.y + obs.h > player.y && obs.y < player.y + player.height &&
+            obs.x + obs.w > player.currentX && obs.x < player.currentX + player.width) {
+            
+            if (powerMode) {
+                score += 50;
+            } else {
+                lives--;
+                if (lives <= 0) {
+                    alert("Game Over! Score: " + Math.floor(score));
+                    location.reload();
+                }
+            }
+            obstacles.splice(i, 1);
+        }
+        if (obs.y > canvas.height) obstacles.splice(i, 1);
+    });
 
-    if(totalFiles<=0){
-      level++;
-      resetMap();
+    // Lógica dos Itens
+    items.forEach((item, i) => {
+        item.y += speed;
+        if (item.y + item.h > player.y && item.y < player.y + player.height &&
+            item.x + item.w > player.currentX && item.x < player.currentX + player.width) {
+            
+            if (item.type === 'file') {
+                score += 20;
+            } else {
+                powerMode = true;
+                powerTimer = 240; // ~4 segundos a 60fps
+            }
+            items.splice(i, 1);
+        }
+        if (item.y > canvas.height) items.splice(i, 1);
+    });
+
+    if (powerMode) {
+        powerTimer--;
+        if (powerTimer <= 0) powerMode = false;
     }
 
     updateHUD();
-  }
-});
+}
 
-function moveEnemies(){
-  enemyMoveCounter++;
-  if(enemyMoveCounter<enemyMoveDelay) return;
-  enemyMoveCounter=0;
+function updateHUD() {
+    const elScore = document.getElementById("score");
+    const elLives = document.getElementById("lives");
+    const elPower = document.getElementById("powerTimer");
 
-  enemies.forEach(e=>{
-    let dx=player.x-e.x;
-    let dy=player.y-e.y;
+    if (elScore) elScore.innerText = Math.floor(score);
+    if (elLives) elLives.innerText = lives;
+    if (elPower) elPower.innerText = powerMode ? "🔥 MODO FOCO" : "";
+}
 
-    let moveX=dx!==0?dx/Math.abs(dx):0;
-    let moveY=dy!==0?dy/Math.abs(dy):0;
+function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    if(map[e.y] && map[e.y][e.x+moveX]!==1){
-      e.x+=moveX;
-    } else if(map[e.y+moveY] && map[e.y+moveY][e.x]!==1){
-      e.y+=moveY;
+    // Pistas e Linhas de Movimento
+    ctx.strokeStyle = "#1a1a2e";
+    ctx.lineWidth = 4;
+    for (let i = 1; i < 3; i++) {
+        ctx.beginPath();
+        ctx.moveTo(i * laneWidth, 0);
+        ctx.lineTo(i * laneWidth, canvas.height);
+        ctx.stroke();
     }
 
-    if(e.x===player.x && e.y===player.y){
-      if(powerMode){
-        e.x=13; e.y=11;
-        score+=100;
-      } else {
-        lives--;
-        player.x=13; player.y=17;
-        if(lives<=0){
-          alert("Game Over");
-          location.reload();
+    // Desenhar Jogador
+    ctx.fillStyle = powerMode ? "#00ff41" : "#00d4ff";
+    ctx.fillRect(player.currentX, player.y, player.width, player.height);
+    // Detalhe: Gravata ou Crachá
+    ctx.fillStyle = "white";
+    ctx.fillRect(player.currentX + player.width/2 - 5, player.y + 10, 10, 20);
+
+    // Desenhar Obstáculos (Gaveteiros 32-bit)
+    obstacles.forEach(obs => {
+        ctx.fillStyle = "#444";
+        ctx.fillRect(obs.x, obs.y, obs.w, obs.h);
+        ctx.fillStyle = "#666";
+        ctx.fillRect(obs.x + 4, obs.y + 6, 32, 10); // Gaveta superior
+        ctx.fillRect(obs.x + 4, obs.y + 22, 32, 10); // Gaveta inferior
+    });
+
+    // Desenhar Itens
+    items.forEach(item => {
+        ctx.fillStyle = item.type === 'file' ? "#fff" : "#ff0";
+        ctx.fillRect(item.x, item.y, item.w, item.h);
+        if (item.type === 'disk') {
+            ctx.fillStyle = "#000";
+            ctx.fillRect(item.x + 5, item.y + 5, 20, 4);
         }
-      }
-      updateHUD();
-    }
-  });
+    });
 }
 
-function updatePower(){
-  if(powerMode){
-    powerTimer-=1/60;
-    if(powerTimer<=0){
-      powerMode=false;
-    }
-  }
-}
-
-function drawMap(){
-  for(let r=0;r<map.length;r++){
-    for(let c=0;c<map[r].length;c++){
-      if(map[r][c]===1){
-        ctx.fillStyle="blue";
-        ctx.fillRect(c*tileSize,r*tileSize,tileSize,tileSize);
-      }
-      if(map[r][c]===2){
-        ctx.fillStyle="white";
-        ctx.beginPath();
-        ctx.arc(c*tileSize+10,r*tileSize+10,3,0,Math.PI*2);
-        ctx.fill();
-      }
-      if(map[r][c]===3){
-        ctx.fillStyle="cyan";
-        ctx.beginPath();
-        ctx.arc(c*tileSize+10,r*tileSize+10,6,0,Math.PI*2);
-        ctx.fill();
-      }
-    }
-  }
-}
-
-function drawPlayer(){
-  ctx.fillStyle=powerMode?"yellow":"lime";
-  ctx.fillRect(player.x*tileSize,player.y*tileSize,tileSize,tileSize);
-}
-
-function drawEnemies(){
-  enemies.forEach(e=>{
-    ctx.fillStyle=powerMode?"blue":e.color;
-    ctx.fillRect(e.x*tileSize+3,e.y*tileSize+3,tileSize-6,tileSize-6);
-  });
-}
-
-function gameLoop(){
-  if(!gameStarted) return;
-
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-
-  drawMap();
-  drawPlayer();
-  drawEnemies();
-
-  moveEnemies();
-  updatePower();
-
-  requestAnimationFrame(gameLoop);
+function gameLoop() {
+    if (!gameStarted) return;
+    update();
+    draw();
+    requestAnimationFrame(gameLoop);
 }
