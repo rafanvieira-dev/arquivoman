@@ -2,32 +2,26 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>ArquivoMan</title>
+    <title>ArquivoMan - Runner 32bit</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
     <div id="startScreen" class="screen">
-        <h1>🗂️ ArquivoMan</h1>
-        <p>O arquivista precisa organizar tudo antes que os gaveteiros dominem o setor!</p>
-        <button onclick="startGame()">▶ Jogar</button>
-
-        <h2>🏆 Ranking Local</h2>
-        <ol id="rankingList"></ol>
+        <h1>🗂️ ArquivoMan: Runner</h1>
+        <p>Desvie dos gaveteiros e organize os arquivos!</p>
+        <p><small>Use as SETAS ESQUERDA e DIREITA para mudar de pista</small></p>
+        <button onclick="startGame()">▶ Iniciar Expediente</button>
     </div>
 
     <div id="gameUI" style="display:none;">
         <div id="hud">
             <span>Pontos: <span id="score">0</span></span>
             <span>Vidas: <span id="lives">3</span></span>
-            <span>Nível: <span id="level">1</span></span>
             <span id="powerTimer"></span>
         </div>
 
-        <!-- 28 colunas x 20px = 560 | 31 linhas x 20px = 620 -->
-        <canvas id="gameCanvas" width="560" height="620"></canvas>
-
-        <div id="message"></div>
+        <canvas id="gameCanvas" width="400" height="600"></canvas>
     </div>
 
     <script src="game.js"></script>
